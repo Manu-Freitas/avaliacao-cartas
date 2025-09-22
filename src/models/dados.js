@@ -108,7 +108,10 @@ const cartas = [
       tipo: "Dragão",
       poder: 210,
       condicao: "Perfeito"
-    }
+    },
   ];
   
-  export default cartas;
+export default {cartas};
+
+
+

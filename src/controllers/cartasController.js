@@ -1,117 +1,184 @@
 import dados from "../models/dados.js";
-const {cartas} = dados;
+const { cartas } = dados;
 
-const getAllCartas = (req, res) => {
-    const resultado = cartas;
-  
-    res.status(200).json({
-      total: resultado.length,
-      cartas: resultado,
-    });
-  };
+const getAllCartas = (req,res) => {
+    const {nomeCarta, raridade, edicao, preco, jogo, tipo, poder, condicao} = req.query;
 
-  const getCartasById = (req, res) => {
-    let id = parseInt(req.params.id);
-  
-    const Carta = cartas.find((c) => c.id === id);
-  
-    res.status(200).json({
-      sucess: true,
-      Carta: Carta,
-    });
-  };
+    let resultado = cartas
 
-  const createCartas = (req, res) => {
-    const { id, nomeCarta, raridade, edicao, preco, jogo, tipo, poder, condicao } = req.body;
-  
-    if (!nomeCarta || !tipo) {
-      return res.status(400).json({
-        sucess: false,
-        message: "Nome e tipo são obrigatórios!",
-      });
+    if (raridade) {
+        resultado = resultado.filter((l) => l.raridade.toLocaleLowerCase().includes(raridade.toLocaleLowerCase()));
     }
+
+    if (preco) {
+        resultado = resultado.filter((l) => l.preco.toLocaleLowerCase().includes(preco.toLocaleLowerCase()));
+    }
+
+
+    res.status(200).json({
+        total: cartas.length,
+        cartas: resultado
+    })
+}
+
+const getCartasById = (req, res) => {
+    let id = parseInt(req.params.id);
+
+    const carta = cartas.find(l => l.id === id);
+
+    if (carta) {
+        res.status(200).json({
+            success: true,
+            carta: carta
+        })
+
+    res.status(400).json({
+        success: false,
+        message: "Carta não encontrada"
+    })
+    }
+}
+
+const createCartas = (req, res) => {
+    const {nomeCarta, raridade, edicao, preco, jogo, tipo, poder, condicao} = req.body;
+
+    if(!nomeCarta || !raridade) {
+        return res.status(400).json({
+            sucess: false,
+            message: "nome e raridade são obrigatórios"
+        })
+    }
+
+     if(nomeCarta) {
+        if (nomeCarta.length < 5) {
+            return res.status(400).json({
+                success: false,
+                message: `O nome deve ter ao menos 5 caracteres`
+            })
+        }
+    }
+
+    if(preco) {
+        if (preco < 1) {
+            return res.status(400).json({
+                success: false,
+                message: `O preço deve ser maior que 0`
+            })
+        }
+    }
+
     const novaCarta = {
-      id: cartas.length + 1,
-      nomeCarta: nomeCarta,
-      raridade: raridade,
-      edicao: edicao,
-      preco: preco,
-      jogo: jogo,
-      tipo: tipo,
-      poder: poder,
-      condicao: condicao
-    };
-    cartas.push(novaCarta);
-  
-    res.status(201).json({
-      sucess: true,
-      messagem: "Carta cadastrada com sucesso!",
-      carta: novaCarta,
-    });
-  };
-
-  const deleteCartas = (req, res) => {
-    let id = parseInt(req.params.id);
-  
-    const cartaParaRemover = cartas.find((c) => c.id === id);
-  
-    if (!cartaParaRemover) {
-      return res.status(404).json({
-        sucess: false,
-        message: `Essa carta não existe, ${id}`,
-      });
+        id: nomeCarta.length + 1,
+        nomeCarta, raridade, edicao, preco, jogo, tipo, poder, condicao
     }
-  
-    const cartasFiltradas = cartas.filter((carta) => carta.id !== id);
-  
-    cartas.splice(0, cartas.length, ...cartasFiltradas);
-  
-    res.status(200).json({
-      sucess: true,
-      message: "A carta foi removida com sucesso",
-      cartaRemovida: cartaParaRemover,
-    });
-  };
-  
-  const updateCarta = (req, res) => {
 
+    cartas.push(novaCarta);
+
+    res.status(201).json({
+        sucess: true,
+        message: "Carta cadastrada com sucesso!",
+        carta: novaCarta
+    })
+}
+
+const updateCarta = (req, res) => {
     const id = parseInt(req.params.id);
     const {nomeCarta, raridade, edicao, preco, jogo, tipo, poder, condicao} = req.body;
+
     const idParaEditar = id;
-  
-    if(isNaN(idParaEditar)){
-      return res.status(400).json({
-        sucess: false,
-        message: "O id deve ser um número válido!"
-      })
+
+    if(isNaN(idParaEditar)) {
+        return res.status(400).json({
+            success: false,
+            message: "O id deve ser válido!!"
+        })
     }
-  
-  const cartaExistente = cartas.find(carta => carta.id === idParaEditar);
-  
-  if(!cartaExistente) {
-    return res.status(404).json({
-      sucess: false,
-      message: `Carta com Id: ${id} não existe.`
+
+    const cartaExiste = cartas.find(livro => cartas.id === id);
+
+    if(!cartaExiste) {
+        return res.status(400).json({
+            success: false,
+            message: "A carta não existe"
+        })
+    }
+
+    if(edicao) { //errado
+        if (edicao > Date().getFullYear()) {
+            return res.status(400).json({
+                success: false,
+                message: `A edição não pode ser uma data futura`
+            })
+        }
+    }
+
+    if(nomeCarta) {
+        if (nomeCarta.length < 5) {
+            return res.status(400).json({
+                success: false,
+                message: `O nome deve ter ao menos 5 caracteres`
+            })
+        }
+    }
+
+    if(preco) {
+        if (preco < 1) {
+            return res.status(400).json({
+                success: false,
+                message: `O preço deve ser maior que 0`
+            })
+        }
+    }
+
+    const cartasAtualizadas = cartas.map(cartas => {
+        return cartas.id === id
+      ? {
+            ...carta,
+            ...(nomeCarta && { nomeCarta }),
+            ...(raridade &&  { raridade }),
+            ...(edicao && { edicao }),
+            ...(preco && { preco }),
+            ...(jogo && { jogo }),
+            ...(tipo && { tipo}),
+            ...(poder && { poder }),
+            ...(condicao && { condicao}),
+        } :carta
     })
-  }
-  
-  const cartasAtualizadas = cartas.map(carta=> carta.id === idParaEditar ? {
-    ...carta,
-    ...(nomeCarta && {nomeCarta}),
-    ...(tipo && {tipo}),
-    ...(edicao && {edicao: parseInt (edicao)})
-  } : carta)
-  
-  cartas.splice(0, cartas.length, ...cartasAtualizadas);
-  
-  const cartaNova = cartas.find(carta => carta.id === idParaEditar);
-  
-  res.status(200).json({
-    sucess: true,
-    message: `Dados da carta ID ${idParaEditar}atualizado com sucesso!`,
-    carta: cartaNova
-  })
-  }
-  export { getAllCartas, getCartasById, createCartas, deleteCartas, updateCarta };
+
+    cartas.splice(0, cartas.length, ...cartasAtualizadas);
+
+    const cartaNova = cartas.find(carta => carta.id === id);
+
+    res.status(200).json({
+        success: true,
+        message: "Dados atualizados com sucesso",
+        carta: cartaNova
+    })
+}
+
+const deleteCartas = (req, res) => {
+    let id = parseInt(req.params.id);
+
+    const cartaRemover = cartas.find(c => c.id === id);
+
+    if (!cartaRemover) {
+        return res.status(404).json({
+            sucess: false,
+            message: `Essa carta não existe, ${id}`
+        })
+    }
+
+    const cartasFiltrados = cartas.filter(carta => carta.id !== id);
+
+   cartas.splice(0, cartas.length, ...cartasFiltradas);
+
+    res.status(200).json({
+        sucess: true,
+        message: "A carta foi removida com sucesso",
+        cartaRemovida: cartaRemover
+    })
+}
+
+export {getAllCartas, getCartasById, updateCarta, createCartas, deleteCartas}
 
 
